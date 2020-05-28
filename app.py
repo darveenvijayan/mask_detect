@@ -16,6 +16,9 @@ np.random.seed(0)
 df = pd.DataFrame({"Col " + str(i+1): np.random.rand(30) for i in range(6)})
 
 app.layout = html.Div([
+    
+    html.H1(children='A 3-Dimensional perspective of points'),
+    
     html.Div(
         dcc.Graph(id='g1', config={'displayModeBar': False}),
         className='four columns'
@@ -28,6 +31,13 @@ app.layout = html.Div([
         dcc.Graph(id='g3', config={'displayModeBar': False}),
         className='four columns'
     )
+    
+    html.H(children='Visualization by Darveen'),
+    
+    html.A(html.Button('Darveen', className='three columns'),
+    href='https://github.com/darveenvijayan')
+    ),
+    
 ], className='row')
 
 def get_figure(df, x_col, y_col, selectedpoints, selectedpoints_local):
