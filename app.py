@@ -32,7 +32,7 @@ app.layout = html.Div([
         className='four columns'
     )
     
-    html.H(children='Visualization by Darveen'),
+    html.H4(children='Visualization by Darveen'),
     
     html.A(html.Button('Darveen', className='three columns'),
     href='https://github.com/darveenvijayan')
