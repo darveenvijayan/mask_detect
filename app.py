@@ -32,7 +32,7 @@ app.layout = html.Div([
             dcc.Graph(id='g3', config={'displayModeBar': False}),
             className='four columns'
         )
-    ], className='row')
+    ], className='row'),
     
     html.H4(children='Visualization by Darveen'),
     
