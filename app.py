@@ -38,9 +38,9 @@ app.layout = html.Div([
     
     html.H4(children='Visualization by Darveen'),
     
-    html.A(html.Button('Darveen', className='three columns'),
-    href='https://github.com/darveenvijayan')
-    ),
+#     html.A(html.Button('Darveen', className='three columns'),
+#     href='https://github.com/darveenvijayan')
+#     ),
     )]
 
 def get_figure(df, x_col, y_col, selectedpoints, selectedpoints_local):
