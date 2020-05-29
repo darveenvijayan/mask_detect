@@ -17,7 +17,10 @@ df = pd.DataFrame({"Col " + str(i+1): np.random.rand(30) for i in range(6)})
 
 app.layout = html.Div([
     
-    html.H1(children='A 3-Dimensional perspective of points'),
+    html.Div([
+    
+        html.H1(children='A 3-Dimensional perspective of points'),
+    ], style={'width':'75%', 'margin':25, 'textAlign': 'center'}),
 
     html.Div([
         html.Div(
