@@ -20,7 +20,7 @@ app.layout = html.Div([
     html.Div([
     
         html.H1(children='A 3-Dimensional perspective of points'),
-    ], style={'width':'75%', 'margin':25, 'textAlign': 'center'}),
+    ], style={'textAlign': 'center'}),
 
     html.Div([
         html.Div(
