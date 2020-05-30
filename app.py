@@ -16,6 +16,14 @@ df = pd.read_csv('https://plotly.github.io/datasets/country_indicators.csv')
 available_indicators = df['Indicator Name'].unique()
 
 app.layout = html.Div([
+    
+    html.Div([
+    
+        html.H1(children='A breakdown of the world economy'),
+    ], style={'textAlign': 'center'}),
+
+
+
     html.Div([
 
         html.Div([
@@ -70,7 +78,14 @@ app.layout = html.Div([
         value=df['Year'].max(),
         marks={str(year): str(year) for year in df['Year'].unique()},
         step=None
-    ), style={'width': '49%', 'padding': '0px 20px 20px 20px'})
+    ), style={'width': '49%', 'padding': '0px 20px 20px 20px'}),
+    
+    html.Hr(),
+    
+    html.H4(children='Visualization by Darveen'),
+    
+    html.A(html.Button('View my code Repository', className='three columns'), href='https://github.com/darveenvijayan'),
+    
 ])
 
 
