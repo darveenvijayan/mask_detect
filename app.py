@@ -134,8 +134,8 @@ def callback(selection1, selection2, selection3):
                 [p['customdata'] for p in selected_data['points']])
 
     return [get_figure(df, "Col 1", "Col 2", selectedpoints, selection1),
-            get_figure(df, "Col 1", "Col 3", selectedpoints, selection2),
-            get_figure(df, "Col 2", "Col 3", selectedpoints, selection3)]
+            get_figure(df, "Col 2", "Col 3", selectedpoints, selection2),
+            get_figure(df, "Col 1", "Col 3", selectedpoints, selection3)]
 
 
 if __name__ == '__main__':
