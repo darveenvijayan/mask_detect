@@ -25,16 +25,16 @@ app.layout = html.Div([
     html.Div([
         html.Div(
             dcc.Graph(id='g1', config={'displayModeBar': False}),
-            className='four columns'
+            className='six columns'
         ),
         html.Div(
             dcc.Graph(id='g2', config={'displayModeBar': False}),
-            className='four columns'
+            className='six columns'
             ),
-        html.Div(
-            dcc.Graph(id='g3', config={'displayModeBar': False}),
-            className='four columns'
-        )
+#         html.Div(
+#             dcc.Graph(id='g3', config={'displayModeBar': False}),
+#             className='four columns'
+#         )
     ], className='row'),
     
     html.H4(children='Visualization by Darveen'),
