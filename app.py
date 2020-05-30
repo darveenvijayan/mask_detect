@@ -37,6 +37,8 @@ app.layout = html.Div([
         )
     ], className='row'),
     
+    html.Hr(),
+    
     html.H4(children='Visualization by Darveen'),
     
     html.A(html.Button('Checkout my Github', className='three columns'), href='https://github.com/darveenvijayan'),
