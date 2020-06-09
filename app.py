@@ -57,41 +57,47 @@ class VideoCamera(object):
     def get_frame(self):
 
         success, image = self.video.read()
-        jpeg = image
+
+        if success is True:
+            jpeg = image
 
 
 
-        faces = faceDetector.detect(jpeg)
+            faces = faceDetector.detect(jpeg)
 
-        for face in faces:
-            xStart, yStart, width, height = face
-            
-            # clamp coordinates that are outside of the image
-            xStart, yStart = max(xStart, 0), max(yStart, 0)
-            
-            # predict mask label on extracted face
-            faceImg = jpeg[yStart:yStart+height, xStart:xStart+width]
-            output = model(transformations(faceImg).unsqueeze(0).to(device))
-            _, predicted = torch.max(output.data, 1)
-            
-            # draw face frame
-            cv2.rectangle(jpeg,
-                          (xStart, yStart),
-                          (xStart + width, yStart + height),
-                          (126, 65, 64),
-                          thickness=2)
-            
-            # center text according to the face frame
-            textSize = cv2.getTextSize(labels[predicted], font, 1, 2)[0]
-            textX = xStart + width // 2 - textSize[0] // 2
-            
-            # draw prediction label
-            cv2.putText(jpeg,
-                        labels[predicted],
-                        (textX, yStart-20),
-                        font, 1, labelColor[predicted], 2) 
+            for face in faces:
+                xStart, yStart, width, height = face
+                
+                # clamp coordinates that are outside of the image
+                xStart, yStart = max(xStart, 0), max(yStart, 0)
+                
+                # predict mask label on extracted face
+                faceImg = jpeg[yStart:yStart+height, xStart:xStart+width]
+                output = model(transformations(faceImg).unsqueeze(0).to(device))
+                _, predicted = torch.max(output.data, 1)
+                
+                # draw face frame
+                cv2.rectangle(jpeg,
+                            (xStart, yStart),
+                            (xStart + width, yStart + height),
+                            (126, 65, 64),
+                            thickness=2)
+                
+                # center text according to the face frame
+                textSize = cv2.getTextSize(labels[predicted], font, 1, 2)[0]
+                textX = xStart + width // 2 - textSize[0] // 2
+                
+                # draw prediction label
+                cv2.putText(jpeg,
+                            labels[predicted],
+                            (textX, yStart-20),
+                            font, 1, labelColor[predicted], 2) 
 
-            ret, jpeg = cv2.imencode('.jpg', jpeg)
+                ret, jpeg = cv2.imencode('.jpg', jpeg)
+
+            else:
+                ret, jpeg = cv2.imencode('.jpg', image)
+
 
         return jpeg.tobytes()
 
