@@ -1,180 +1,180 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import numpy as np
-import pandas as pd
-from dash.dependencies import Input, Output
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+from flask import Flask, Response
+import cv2
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server
-app.title='Dashboard'
+from pathlib import Path
 
-df = pd.read_csv('https://plotly.github.io/datasets/country_indicators.csv')
+import click
+import cv2
+import torch
+from skvideo.io import FFmpegWriter, vreader
+from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor
 
-available_indicators = df['Indicator Name'].unique()
-
-app.layout = html.Div([
-    
-    html.Div([
-    
-        html.H1(children='A breakdown of the world economy'),
-    ], style={'textAlign': 'center'}),
+from common.facedetector import FaceDetector
+from train import MaskDetector
 
 
 
-    html.Div([
+model = MaskDetector()
+model.load_state_dict(torch.load('/media/darveen/DATADRIVE1/Projects/KLCCUH/MaskDetection/covid-mask-detector/covid-mask-detector_dash/models/face_mask.ckpt')['state_dict'], strict=False)
+# print('model loaded')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
+model.eval()
 
-        html.Div([
-            dcc.Dropdown(
-                id='crossfilter-xaxis-column',
-                options=[{'label': i, 'value': i} for i in available_indicators],
-                value='Fertility rate, total (births per woman)'
-            ),
-            dcc.RadioItems(
-                id='crossfilter-xaxis-type',
-                options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
-                value='Linear',
-                labelStyle={'display': 'inline-block'}
-            )
-        ],
-        style={'width': '49%', 'display': 'inline-block'}),
+faceDetector = FaceDetector(
+    prototype='models/deploy.prototxt.txt',
+    model='models/res10_300x300_ssd_iter_140000.caffemodel',
+)
 
-        html.Div([
-            dcc.Dropdown(
-                id='crossfilter-yaxis-column',
-                options=[{'label': i, 'value': i} for i in available_indicators],
-                value='Life expectancy at birth, total (years)'
-            ),
-            dcc.RadioItems(
-                id='crossfilter-yaxis-type',
-                options=[{'label': i, 'value': i} for i in ['Linear', 'Log']],
-                value='Linear',
-                labelStyle={'display': 'inline-block'}
-            )
-        ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
-    ], style={
-        'borderBottom': 'thin lightgrey solid',
-        'backgroundColor': 'rgb(250, 250, 250)',
-        'padding': '10px 5px'
-    }),
-
-    html.Div([
-        dcc.Graph(
-            id='crossfilter-indicator-scatter',
-            hoverData={'points': [{'customdata': 'Japan'}]}
-        )
-    ], style={'width': '49%', 'display': 'inline-block', 'padding': '0 20'}),
-    html.Div([
-        dcc.Graph(id='x-time-series'),
-        dcc.Graph(id='y-time-series'),
-    ], style={'display': 'inline-block', 'width': '49%'}),
-
-    html.Div(dcc.Slider(
-        id='crossfilter-year--slider',
-        min=df['Year'].min(),
-        max=df['Year'].max(),
-        value=df['Year'].max(),
-        marks={str(year): str(year) for year in df['Year'].unique()},
-        step=None
-    ), style={'width': '49%', 'padding': '0px 20px 20px 20px'}),
-    
-    html.Hr(),
-    
-    html.H4(children='Visualization by Darveen'),
-    
-    html.A(html.Button('View my code Repository', className='three columns'), href='https://github.com/darveenvijayan'),
-    
+transformations = Compose([
+    ToPILImage(),
+    Resize((100, 100)),
+    ToTensor(),
 ])
 
 
-@app.callback(
-    dash.dependencies.Output('crossfilter-indicator-scatter', 'figure'),
-    [dash.dependencies.Input('crossfilter-xaxis-column', 'value'),
-     dash.dependencies.Input('crossfilter-yaxis-column', 'value'),
-     dash.dependencies.Input('crossfilter-xaxis-type', 'value'),
-     dash.dependencies.Input('crossfilter-yaxis-type', 'value'),
-     dash.dependencies.Input('crossfilter-year--slider', 'value')])
-def update_graph(xaxis_column_name, yaxis_column_name,
-                 xaxis_type, yaxis_type,
-                 year_value):
-    dff = df[df['Year'] == year_value]
-
-    return {
-        'data': [dict(
-            x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
-            y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
-            text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-            customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
-            mode='markers',
-            marker={
-                'size': 15,
-                'opacity': 0.5,
-                'line': {'width': 0.5, 'color': 'white'}
-            }
-        )],
-        'layout': dict(
-            xaxis={
-                'title': xaxis_column_name,
-                'type': 'linear' if xaxis_type == 'Linear' else 'log'
-            },
-            yaxis={
-                'title': yaxis_column_name,
-                'type': 'linear' if yaxis_type == 'Linear' else 'log'
-            },
-            margin={'l': 40, 'b': 30, 't': 10, 'r': 0},
-            height=450,
-            hovermode='closest'
-        )
-    }
+font = cv2.FONT_HERSHEY_SIMPLEX
+# cv2.namedWindow('main', cv2.WINDOW_NORMAL)
+labels = ['No Mask', 'Mask']
+labelColor = [(10, 0, 255), (10, 255, 0)]
 
 
-def create_time_series(dff, axis_type, title):
-    return {
-        'data': [dict(
-            x=dff['Year'],
-            y=dff['Value'],
-            mode='lines+markers'
-        )],
-        'layout': {
-            'height': 225,
-            'margin': {'l': 20, 'b': 30, 'r': 10, 't': 10},
-            'annotations': [{
-                'x': 0, 'y': 0.85, 'xanchor': 'left', 'yanchor': 'bottom',
-                'xref': 'paper', 'yref': 'paper', 'showarrow': False,
-                'align': 'left', 'bgcolor': 'rgba(255, 255, 255, 0.5)',
-                'text': title
-            }],
-            'yaxis': {'type': 'linear' if axis_type == 'Linear' else 'log'},
-            'xaxis': {'showgrid': False}
-        }
-    }
 
 
-@app.callback(
-    dash.dependencies.Output('x-time-series', 'figure'),
-    [dash.dependencies.Input('crossfilter-indicator-scatter', 'hoverData'),
-     dash.dependencies.Input('crossfilter-xaxis-column', 'value'),
-     dash.dependencies.Input('crossfilter-xaxis-type', 'value')])
-def update_y_timeseries(hoverData, xaxis_column_name, axis_type):
-    country_name = hoverData['points'][0]['customdata']
-    dff = df[df['Country Name'] == country_name]
-    dff = dff[dff['Indicator Name'] == xaxis_column_name]
-    title = '<b>{}</b><br>{}'.format(country_name, xaxis_column_name)
-    return create_time_series(dff, axis_type, title)
 
 
-@app.callback(
-    dash.dependencies.Output('y-time-series', 'figure'),
-    [dash.dependencies.Input('crossfilter-indicator-scatter', 'hoverData'),
-     dash.dependencies.Input('crossfilter-yaxis-column', 'value'),
-     dash.dependencies.Input('crossfilter-yaxis-type', 'value')])
-def update_x_timeseries(hoverData, yaxis_column_name, axis_type):
-    dff = df[df['Country Name'] == hoverData['points'][0]['customdata']]
-    dff = dff[dff['Indicator Name'] == yaxis_column_name]
-    return create_time_series(dff, axis_type, yaxis_column_name)
+class VideoCamera(object):
+    def __init__(self):
+        self.video = cv2.VideoCapture(0)
 
+    def __del__(self):
+        self.video.release()
+
+    def get_frame(self):
+
+        success, image = self.video.read()
+        jpeg = image
+
+
+
+        faces = faceDetector.detect(jpeg)
+
+        for face in faces:
+            xStart, yStart, width, height = face
+            
+            # clamp coordinates that are outside of the image
+            xStart, yStart = max(xStart, 0), max(yStart, 0)
+            
+            # predict mask label on extracted face
+            faceImg = jpeg[yStart:yStart+height, xStart:xStart+width]
+            output = model(transformations(faceImg).unsqueeze(0).to(device))
+            _, predicted = torch.max(output.data, 1)
+            
+            # draw face frame
+            cv2.rectangle(jpeg,
+                          (xStart, yStart),
+                          (xStart + width, yStart + height),
+                          (126, 65, 64),
+                          thickness=2)
+            
+            # center text according to the face frame
+            textSize = cv2.getTextSize(labels[predicted], font, 1, 2)[0]
+            textX = xStart + width // 2 - textSize[0] // 2
+            
+            # draw prediction label
+            cv2.putText(jpeg,
+                        labels[predicted],
+                        (textX, yStart-20),
+                        font, 1, labelColor[predicted], 2) 
+
+            ret, jpeg = cv2.imencode('.jpg', jpeg)
+
+        return jpeg.tobytes()
+
+
+def gen(camera):
+    # modelpath = '/media/darveen/DATADRIVE1/Projects/KLCCUH/MaskDetection/covid-mask-detector/covid-mask-detector_dash/models/face_mask.ckpt'
+    # model = MaskDetector()
+    # model.load_state_dict(torch.load('/media/darveen/DATADRIVE1/Projects/KLCCUH/MaskDetection/covid-mask-detector/covid-mask-detector_dash/models/face_mask.ckpt')['state_dict'], strict=False)
+
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # model = model.to(device)
+    # model.eval()
+
+    # faceDetector = FaceDetector(
+    #     prototype='covid-mask-detector/models/deploy.prototxt.txt',
+    #     model='covid-mask-detector/models/res10_300x300_ssd_iter_140000.caffemodel',
+    # )
+
+    # transformations = Compose([
+    #     ToPILImage(),
+    #     Resize((100, 100)),
+    #     ToTensor(),
+    # ])
+
+
+    # font = cv2.FONT_HERSHEY_SIMPLEX
+    # cv2.namedWindow('main', cv2.WINDOW_NORMAL)
+    # labels = ['No Mask', 'Mask']
+    # labelColor = [(10, 0, 255), (10, 255, 0)]
+
+
+    while True:
+        frame = camera.get_frame()
+
+        # faces = faceDetector.detect(frame)
+        # for face in faces:
+        #     xStart, yStart, width, height = face
+            
+        #     # clamp coordinates that are outside of the image
+        #     xStart, yStart = max(xStart, 0), max(yStart, 0)
+            
+        #     # predict mask label on extracted face
+        #     faceImg = frame[yStart:yStart+height, xStart:xStart+width]
+        #     output = model(transformations(faceImg).unsqueeze(0).to(device))
+        #     _, predicted = torch.max(output.data, 1)
+            
+        #     # draw face frame
+        #     cv2.rectangle(frame,
+        #                   (xStart, yStart),
+        #                   (xStart + width, yStart + height),
+        #                   (126, 65, 64),
+        #                   thickness=2)
+            
+        #     # center text according to the face frame
+        #     textSize = cv2.getTextSize(labels[predicted], font, 1, 2)[0]
+        #     textX = xStart + width // 2 - textSize[0] // 2
+            
+        #     # draw prediction label
+        #     cv2.putText(frame,
+        #                 labels[predicted],
+        #                 (textX, yStart-20),
+        #                 font, 1, labelColor[predicted], 2) 
+
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+server = Flask(__name__)
+app = dash.Dash(__name__, server=server)
+
+# app = dash.Dash(__name__)
+# server = app.server
+app.title='Dashboard'
+
+@server.route('/video_feed')
+def video_feed():
+    return Response(gen(VideoCamera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+app.layout = html.Div([
+    html.H1("Webcam Test"),
+    html.Img(src="/video_feed")
+])
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server()
