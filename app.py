@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 import cv2
 import torch
-from skvideo.io import FFmpegWriter, vreader
+
 from torchvision.transforms import Compose, Resize, ToPILImage, ToTensor
 
 # from common.facedetector import FaceDetector
