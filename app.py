@@ -35,7 +35,7 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 transformations = Compose([
     ToPILImage(),
-    Resize((100, 100)),
+#     Resize((100, 100)),
     ToTensor(),
 ])
 
