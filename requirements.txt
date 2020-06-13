@@ -1,4 +1,5 @@
 click
+dash
 opencv_python
 torch
 torchvision
