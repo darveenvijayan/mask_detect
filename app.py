@@ -25,12 +25,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 model.eval()
 
-# faceDetector = FaceDetector(
-#     prototype='models/deploy.prototxt.txt',
-#     model='models/res10_300x300_ssd_iter_140000.caffemodel',
-# )
+faceDetector = FaceDetector(
+    prototype='models/deploy.prototxt.txt',
+    model='models/res10_300x300_ssd_iter_140000.caffemodel',
+)
 
-face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+# face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 
 transformations = Compose([
@@ -66,8 +66,8 @@ class VideoCamera(object):
 
 
 
-#             faces = faceDetector.detect(jpeg)
-            faces = face_cascade.detectMultiScale(jpeg, 1.1, 4)
+            faces = faceDetector.detect(jpeg)
+#             faces = face_cascade.detectMultiScale(jpeg, 1.1, 4)
 
             for face in faces:
                 xStart, yStart, width, height = face
